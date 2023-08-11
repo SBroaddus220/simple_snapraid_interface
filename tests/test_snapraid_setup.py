@@ -8,7 +8,6 @@ Test cases for the SnapraidSetup class.
 
 import asyncio
 from pathlib import Path
-from simple_async_command_manager.commands.command_bases import SubprocessCommand
 
 import unittest
 from unittest import mock
@@ -41,7 +40,7 @@ class TestSnapraidSetup(unittest.TestCase):
             command = self.snapraid_setup.prepare_sync_subprocess()
 
             # Assert
-            self.assertEqual(command.command, expected_command)
+            self.assertEqual(command, expected_command)
 
 
     def test_prepare_sync_subprocess_no_executable(self):
@@ -63,34 +62,34 @@ class TestSnapraidSetup(unittest.TestCase):
             command2 = self.snapraid_setup.prepare_sync_subprocess()
 
             # Assert
-            self.assertEqual(command1.command, command2.command)
+            self.assertEqual(command1, command2)
 
 
     # ****************
     # Sync tests
     def test_sync_method(self):
         # Arrange
-        with mock.patch.object(SubprocessCommand, 'run', return_value=None) as mock_run, \
+        with mock.patch("simple_snapraid_interface.utilities.utilities.run_command", return_value=None) as mock_run_command, \
             mock.patch('pathlib.Path.exists', return_value=True), \
             mock.patch('asyncio.create_subprocess_exec', new=mock.MagicMock()):
             # Act
             asyncio.run(self.snapraid_setup.sync())
 
             # Assert
-            mock_run.assert_called_once()
+            mock_run_command.assert_called_once()
             
             
     def test_sync_method_prepares_subprocess(self):
         # Arrange
         mock_subprocess_command = mock.Mock()
-        mock_subprocess_command.run = AsyncMock()
 
         # Manually sets the attribute to the required value to simulate prepare sync subprocess call
         def side_effect():
             self.snapraid_setup.subprocess_sync_command = mock_subprocess_command
             return mock_subprocess_command
 
-        with mock.patch('pathlib.Path.exists', return_value=True), \
+        with mock.patch("simple_snapraid_interface.utilities.utilities.run_command", return_value=None) as mock_run_command, \
+            mock.patch('pathlib.Path.exists', return_value=True), \
             mock.patch.object(SnapraidSetup, 'prepare_sync_subprocess', side_effect=side_effect) as mock_prepare_sync_subprocess:
 
             # Act
@@ -98,7 +97,7 @@ class TestSnapraidSetup(unittest.TestCase):
 
             # Assert
             mock_prepare_sync_subprocess.assert_called_once()
-            mock_subprocess_command.run.assert_called_once()
+            mock_run_command.assert_called_once()
 
 
 # ****************

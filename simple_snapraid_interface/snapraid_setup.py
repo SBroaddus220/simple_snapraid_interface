@@ -7,8 +7,9 @@ This module contains the SnapraidSetup class, which is used to run SnapRAID comm
 
 import logging
 from pathlib import Path
-from typing import Optional
-from simple_async_command_manager.commands.command_bases import SubprocessCommand
+from typing import Optional, List
+
+from simple_snapraid_interface.utilities import utilities
 
 # **********
 # Sets up logger
@@ -26,18 +27,18 @@ class SnapraidSetup:
         """
         self.executable_path = executable_path
         
-        #: SubprocessCommand object to sync the SnapRAID setup.
-        self.subprocess_sync_command: Optional[SubprocessCommand] = None
+        #: Command to sync the SnapRAID setup.
+        self.subprocess_sync_command: Optional[List[str]] = None
         
         
-    def prepare_sync_subprocess(self) -> SubprocessCommand:
-        """Prepares the SubprocessCommand to sync the SnapRAID setup.
+    def prepare_sync_subprocess(self) -> List[str]:
+        """Prepares the command to sync the SnapRAID setup.
 
         Raises:
             FileNotFoundError: If the SnapRAID executable is not found.
 
         Returns:
-            SubprocessCommand: SubprocessCommand object to sync the SnapRAID setup.
+            List[str]: Command to sync the SnapRAID setup.
         """
         logger.info(f"Preparing the sync subprocess for SnapRAID `{self.executable_path}`.")
         if not self.executable_path.exists():
@@ -48,7 +49,7 @@ class SnapraidSetup:
             "sync"
         ]
         
-        self.subprocess_sync_command = SubprocessCommand(command)
+        self.subprocess_sync_command = command
         
         return self.subprocess_sync_command
     
@@ -61,7 +62,10 @@ class SnapraidSetup:
         """
         self.prepare_sync_subprocess()
         logger.info(f"Syncing the SnapRAID setup `{self.executable_path}`.")
-        await self.subprocess_sync_command.run(print_output=print_output)
+        try:
+            await utilities.run_command(self.subprocess_sync_command, print_output)
+        except RuntimeError as e:
+            logger.error(f"Error running sync command: {str(e)}")
 
 
 # **********
